@@ -8,48 +8,106 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/components/ui/use-toast";
-import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { MoreVertical, Plus, Trash } from "lucide-react";
+import { useState } from "react";
 
 const Goals = () => {
-  const [goals, setGoals] = useState([]);
-
-  useEffect(() => {
-    fetch('http://localhost:5000/api/goals')
-        .then(response => response.json())
-        .then(data => setGoals(data))
-        .catch(error => console.error('Error fetching goals:', error));
-  }, []);
+  const [goals, setGoals] = useState([
+    { name: "Emergency Fund", target: 10000, current: 6000, category: "Savings" },
+    { name: "New Car", target: 25000, current: 5000, category: "Purchase" },
+    { name: "House Down Payment", target: 50000, current: 15000, category: "Property" },
+    { name: "Vacation", target: 5000, current: 2500, category: "Travel" }
+  ]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isProgressDialogOpen, setIsProgressDialogOpen] = useState(false);
+  const [selectedGoalIndex, setSelectedGoalIndex] = useState<number | null>(null);
   const [newGoal, setNewGoal] = useState({
     name: "",
     target: "",
     current: "",
     category: ""
   });
+  const [progressAmount, setProgressAmount] = useState("");
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const goalData = {
       name: newGoal.name,
       target: Number(newGoal.target),
       current: Number(newGoal.current),
-      category: newGoal.category
+      category: newGoal.category,
     };
 
-    setGoals([...goals, goalData]);
-    setIsDialogOpen(false);
-    setNewGoal({ name: "", target: "", current: "", category: "" });
-    
+    try {
+      const response = await fetch("http://localhost:5000/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(goalData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add goal");
+      }
+
+      const addedGoal = await response.json();
+      setGoals([...goals, addedGoal]); // Update the goals list
+      setIsDialogOpen(false); // Close the dialog
+      setNewGoal({ name: "", target: "", current: "", category: "" }); // Reset the form
+      toast({
+        title: "Goal Created",
+        description: "Your new financial goal has been added successfully.",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to add goal. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteGoal = (index: number) => {
+    const updatedGoals = goals.filter((_, i) => i !== index);
+    setGoals(updatedGoals);
     toast({
-      title: "Goal Created",
-      description: "Your new financial goal has been added successfully.",
+      title: "Goal Deleted",
+      description: "Your financial goal has been deleted.",
+    });
+  };
+
+  const handleAddProgress = (index: number) => {
+    setSelectedGoalIndex(index);
+    setIsProgressDialogOpen(true);
+  };
+
+  const handleProgressSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedGoalIndex === null) return;
+
+    const updatedGoals = [...goals];
+    const goal = updatedGoals[selectedGoalIndex];
+    goal.current = Math.min(goal.current + Number(progressAmount), goal.target);
+    
+    setGoals(updatedGoals);
+    setIsProgressDialogOpen(false);
+    setProgressAmount("");
+    setSelectedGoalIndex(null);
+
+    toast({
+      title: "Progress Added",
+      description: "Your progress has been updated successfully.",
     });
   };
 
@@ -77,9 +135,29 @@ const Goals = () => {
                     <h3 className="text-lg font-semibold text-primary">{goal.name}</h3>
                     <span className="text-sm text-gray-500">{goal.category}</span>
                   </div>
-                  <span className="text-sm font-medium text-primary">
-                    ${goal.current.toLocaleString()} / ${goal.target.toLocaleString()}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-primary">
+                      ${goal.current.toLocaleString()} / ${goal.target.toLocaleString()}
+                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="p-2 hover:bg-gray-100 rounded-full">
+                        <MoreVertical className="h-4 w-4 text-gray-500" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleAddProgress(index)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Progress
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteGoal(index)}
+                          className="text-red-600"
+                        >
+                          <Trash className="h-4 w-4 mr-2" />
+                          Delete Goal
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 <Progress value={(goal.current / goal.target) * 100} className="h-2" />
                 <p className="text-sm text-gray-600 mt-2">
@@ -139,6 +217,30 @@ const Goals = () => {
                 </div>
                 <DialogFooter>
                   <Button type="submit">Create Goal</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isProgressDialogOpen} onOpenChange={setIsProgressDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Progress</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleProgressSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="progress">Amount to Add ($)</Label>
+                  <Input
+                    id="progress"
+                    type="number"
+                    value={progressAmount}
+                    onChange={(e) => setProgressAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    required
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="submit">Add Progress</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
