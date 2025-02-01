@@ -4,7 +4,6 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const Account = require('./models/MyMoney');
 const Budget = require('./models/Budget');
-const Log = require('./models/Log');
 
 const app = express();
 const port = process.env.PORT || 5000; // Use environment variable for port
