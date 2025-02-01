@@ -1,38 +1,64 @@
+require('dotenv').config(); // Load environment variables from .env
 const express = require('express');
 const cors = require('cors');
-const { OpenAI } = require('openai');
-require('dotenv').config();
+const mongoose = require('mongoose');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5000; // Use environment variable for port
 
-// Initialize OpenAI
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// AI Chatbot Endpoint
-app.post('/api/chat', async (req, res) => {
-    const { message } = req.body;
+// Connect to MongoDB using the environment variable
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('Failed to connect to MongoDB:', err));
 
+// Define schemas and models
+const courseSchema = new mongoose.Schema({
+    title: String,
+    description: String,
+    modules: Number,
+    duration: String,
+    level: String,
+    icon: String,
+    topics: [String],
+    prerequisites: String,
+});
+
+const goalSchema = new mongoose.Schema({
+    name: String,
+    target: Number,
+    current: Number,
+    category: String,
+});
+
+const Course = mongoose.model('Course', courseSchema);
+const Goal = mongoose.model('Goal', goalSchema);
+
+// Endpoint for the Learn page
+app.get('/api/learn', async (req, res) => {
     try {
-        const response = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
-            messages: [{ role: 'user', content: message }],
-        });
-
-        res.json({ reply: response.choices[0].message.content });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Something went wrong' });
+        const courses = await Course.find();
+        res.json(courses);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching courses', error: err });
     }
 });
 
-// Start Server
+// Endpoint for the Goals page
+app.get('/api/goals', async (req, res) => {
+    try {
+        const goals = await Goal.find();
+        res.json(goals);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching goals', error: err });
+    }
+});
+
 app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+    console.log(`Server is running on http://localhost:${port}`);
 });
