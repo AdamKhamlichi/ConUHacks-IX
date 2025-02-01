@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 export const Header = () => {
+  const { logout } = useAuth();
+
   return (
     <header className="bg-white border-b border-gray-200 py-4">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,7 +15,7 @@ export const Header = () => {
             </Link>
           </div>
           
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             <Link to="/my-money" className="text-gray-600 hover:text-primary transition-colors">
               My Money
             </Link>
@@ -30,6 +34,13 @@ export const Header = () => {
             <Link to="/retirement" className="text-gray-600 hover:text-primary transition-colors">
               Future
             </Link>
+            <Button 
+              variant="ghost" 
+              onClick={logout}
+              className="text-gray-600 hover:text-primary transition-colors"
+            >
+              Logout
+            </Button>
           </div>
         </div>
       </nav>
