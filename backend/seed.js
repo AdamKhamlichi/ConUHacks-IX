@@ -84,6 +84,56 @@ const seedGoals = [
     { name: "Vacation", target: 5000, current: 2500, category: "Travel" }
 ];
 
+const seedAccounts = [
+    {
+        userId: "user123",
+        accountName: "Main Checking",
+        accountType: "Checking",
+        balance: 5000,
+        transactions: [
+            {
+                type: "debit",
+                amount: 1500,
+                description: "Rent payment",
+                category: "Housing",
+                date: new Date()
+            },
+            {
+                type: "credit",
+                amount: 3000,
+                description: "Salary deposit",
+                category: "Income",
+                date: new Date()
+            }
+        ],
+        monthlyData: [
+            {
+                month: new Date(new Date().setDate(1)),
+                balance: 5000
+            }
+        ]
+    }
+];
+
+const seedBudget = {
+    userId: "user123",
+    month: new Date(new Date().setDate(1)),
+    totalBudget: 5000,
+    categories: [
+        { name: "Housing", limit: 2000, spent: 1500, color: "#0088FE" },
+        { name: "Food", limit: 800, spent: 400, color: "#00C49F" },
+        { name: "Transportation", limit: 400, spent: 200, color: "#FFBB28" },
+        { name: "Entertainment", limit: 300, spent: 150, color: "#FF8042" }
+    ],
+    monthlyHistory: [
+        {
+            month: new Date(new Date().setDate(1)),
+            spent: 2250,
+            budget: 5000
+        }
+    ]
+};
+
 const seedDatabase = async () => {
     try {
         await Course.deleteMany({});
