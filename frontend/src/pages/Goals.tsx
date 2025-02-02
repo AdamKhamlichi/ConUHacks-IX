@@ -90,16 +90,36 @@ const Goals = () => {
     }
   };
 
-  const handleDeleteGoal = (index: number) => {
-    const updatedGoals = goals.filter((_, i) => i !== index);
-    setGoals(updatedGoals);
-    toast({
-      title: "Goal Deleted",
-      description: "Your financial goal has been deleted.",
-    });
-  };
+    const handleDeleteGoal = async (index: number, goalId: string) => {
+        try {
+            // Send the delete request to the backend
+            const response = await fetch(`http://localhost:5000/api/goals/${goalId}`, {
+                method: "DELETE",
+            });
 
-  const handleAddProgress = (index: number) => {
+            if (!response.ok) {
+                throw new Error("Failed to delete goal");
+            }
+
+            const updatedGoals = goals.filter((_, i) => i !== index);
+            setGoals(updatedGoals);
+
+            toast({
+                title: "Goal Deleted",
+                description: "Your financial goal has been deleted.",
+            });
+        } catch (error) {
+            console.error("Error deleting goal:", error);
+            toast({
+                title: "Error",
+                description: "Failed to delete goal. Please try again.",
+                variant: "destructive",
+            });
+        }
+    };
+
+
+    const handleAddProgress = (index: number) => {
     setSelectedGoalIndex(index);
     setIsProgressDialogOpen(true);
   };
@@ -161,7 +181,7 @@ const Goals = () => {
                           Add Progress
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => handleDeleteGoal(index)}
+                          onClick={() => handleDeleteGoal(index, goal._id)}
                           className="text-red-600"
                         >
                           <Trash className="h-4 w-4 mr-2" />

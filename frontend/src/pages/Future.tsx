@@ -60,8 +60,8 @@ const Future = () => {
 
             const projections = calculateProjections(data);
             setRetirementData({
-                ...data,  // Include other data fetched from the backend
-                ...projections,  // Include the projections data (savingsRate, predictedRetirementAge, etc.)
+                ...data,
+                ...projections,
             });
         } catch (err) {
             console.error("Error fetching retirement data:", err);
