@@ -2,6 +2,11 @@ require('dotenv').config(); // Load environment variables from .env
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const Goal = require('./models/Goals');
+const Course = require('./models/Course');
+const Invest = require('./models/Invest');
+const Retirement = require('./models/Retirement');
+
 
 const app = express();
 const port = process.env.PORT || 5000; // Use environment variable for port
@@ -9,43 +14,10 @@ const port = process.env.PORT || 5000; // Use environment variable for port
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('Failed to connect to MongoDB:', err));
 
-// Define schemas and models
-const courseSchema = new mongoose.Schema({
-    title: String,
-    description: String,
-    modules: Number,
-    duration: String,
-    level: String,
-    icon: String,
-    topics: [String],
-    prerequisites: String,
-});
-
-const goalSchema = new mongoose.Schema({
-    name: String,
-    target: Number,
-    current: Number,
-    category: String,
-});
-
-const investSchema = new mongoose.Schema({
-    month: String,
-    stocks: Number,
-    bonds: Number,
-    crypto: Number,
-    date: { type: Date, default: Date.now }
-});
-
-const Course = mongoose.model('Course', courseSchema);
-const Goal = mongoose.model('Goal', goalSchema);
-const Invest = mongoose.model('Invest', investSchema);
 
 // Endpoint for the Learn page
 app.get('/api/learn', async (req, res) => {
@@ -69,9 +41,7 @@ app.get('/api/goals', async (req, res) => {
 // Endpoint for the Invest page
 app.get('/api/invests', async (req, res) => {
     try {
-        console.log('Fetching investments from the database...');
         const investments = await Invest.find();
-        console.log('Investments fetched:', investments);
         res.json(investments);
     } catch (err) {
         console.error('Error fetching investments:', err);
@@ -135,20 +105,49 @@ app.patch('/api/goals/:id/progress', async (req, res) => {
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Endpoint to handle chat messages
 app.post("/api/chat", async (req, res) => {
-    try {
-        const { message } = req.body;
+  try {
+    const { message } = req.body;
 
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Fetch financial data from DB (e.g., user investments, goals, etc.)
+    const financialData = await fetchFinancialData(); // Custom function to fetch financial data from DB
 
-        const result = await model.generateContent(message);
-        const response = await result.response;
-        const text = response.text();
+    // Create the conversation context with financial data
+    const context = `
+            You are a financial assistant and can only answer questions related to finance. 
+            Here's some relevant financial data:
+            ${JSON.stringify(financialData)}
+            User asked: ${message}
+        `;
 
-        res.status(200).json({ message: text });
-    } catch (err) {
-        console.error("Error generating response:", err);
-        res.status(500).json({ message: "Error generating response", error: err });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(context);
+    const response = await result.response;
+    const text = response.text();
+
+    res.status(200).json({ message: text });
+  } catch (err) {
+    console.error("Error generating response:", err);
+    res.status(500).json({ message: "Error generating response", error: err });
+  }
+});
+
+const fetchFinancialData = async () => {
+  const goals = await Goal.find();
+  const investments = await Invest.find();
+  return { goals, investments };
+};
+
+
+// GET endpoint to fetch retirement data
+app.get("/api/retirement", async (req, res) => {
+  try {
+    const retirementData = await Retirement.findOne();
+    if (!retirementData) {
+      return res.status(404).json({ message: "Retirement data not found" });
     }
+    res.status(200).json(retirementData);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching retirement data", error: err });
+  }
 });

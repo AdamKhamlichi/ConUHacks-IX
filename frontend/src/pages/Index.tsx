@@ -14,7 +14,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto">
           {/* Welcome Message */}
           <div className="text-left mb-8">
-            <h1 className="text-3xl font-semibold text-gray-900 mb-2">Hey there! 👋</h1>
+            <h1 className="text-3xl font-semibold text-gray-900 mb-2">Hey there Admin!👋</h1>
             <p className="text-sm font-medium text-gray-500">
               Last seen: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
             </p>

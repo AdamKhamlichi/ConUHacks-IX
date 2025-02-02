@@ -19,15 +19,27 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { MoreVertical, Plus, Trash } from "lucide-react";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 
 const Goals = () => {
-  const [goals, setGoals] = useState([
-    { name: "Emergency Fund", target: 10000, current: 6000, category: "Savings" },
-    { name: "New Car", target: 25000, current: 5000, category: "Purchase" },
-    { name: "House Down Payment", target: 50000, current: 15000, category: "Property" },
-    { name: "Vacation", target: 5000, current: 2500, category: "Travel" }
-  ]);
+  const [goals, setGoals] = useState([]);
+
+    // Fetch goals from the backend
+    useEffect(() => {
+        const fetchGoals = async () => {
+            try {
+                const response = await fetch("http://localhost:5000/api/goals");
+                if (!response.ok) throw new Error("Failed to fetch goals");
+
+                const data = await response.json();
+                setGoals(data);
+            } catch (error) {
+                console.error("Error fetching goals:", error);
+            }
+        };
+
+        fetchGoals();
+    }, []);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isProgressDialogOpen, setIsProgressDialogOpen] = useState(false);
