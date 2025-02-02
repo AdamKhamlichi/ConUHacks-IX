@@ -105,23 +105,39 @@ app.patch('/api/goals/:id/progress', async (req, res) => {
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Endpoint to handle chat messages
 app.post("/api/chat", async (req, res) => {
-    try {
-        const { message } = req.body;
+  try {
+    const { message } = req.body;
 
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Fetch financial data from DB (e.g., user investments, goals, etc.)
+    const financialData = await fetchFinancialData(); // Custom function to fetch financial data from DB
 
-        const result = await model.generateContent(message);
-        const response = await result.response;
-        const text = response.text();
+    // Create the conversation context with financial data
+    const context = `
+            You are a financial assistant and can only answer questions related to finance. 
+            Here's some relevant financial data:
+            ${JSON.stringify(financialData)}
+            User asked: ${message}
+        `;
 
-        res.status(200).json({ message: text });
-    } catch (err) {
-        console.error("Error generating response:", err);
-        res.status(500).json({ message: "Error generating response", error: err });
-    }
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(context);
+    const response = await result.response;
+    const text = response.text();
+
+    res.status(200).json({ message: text });
+  } catch (err) {
+    console.error("Error generating response:", err);
+    res.status(500).json({ message: "Error generating response", error: err });
+  }
 });
+
+const fetchFinancialData = async () => {
+  const goals = await Goal.find();
+  const investments = await Invest.find();
+  return { goals, investments };
+};
+
 
 // GET endpoint to fetch retirement data
 app.get("/api/retirement", async (req, res) => {
