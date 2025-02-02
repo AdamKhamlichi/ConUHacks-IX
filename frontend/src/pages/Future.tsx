@@ -8,9 +8,9 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 
 const Future = () => {
   const { toast } = useToast();
-  const retirementGoal = 1000000;
+  const retirementGoal = 1200000;
   const currentSavings = 250000;
-  const monthlyContribution = 1500;
+  const monthlyContribution = 1490;
   const yearsToRetirement = 25;
 
   // Mock data for AI predictions
