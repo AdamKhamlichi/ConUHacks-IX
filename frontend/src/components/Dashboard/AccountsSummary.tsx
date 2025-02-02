@@ -1,8 +1,8 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState } from "react";
 import { FinancialOverview } from "./FinancialOverview";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Mock data for accounts
 const accounts = [
@@ -22,6 +22,32 @@ const transactions = [
   { id: 6, type: "expense", description: "Internet Bill", amount: -80, date: "2024-01-28" },
 ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+const AnimatedNumber = ({ value }: { value: number }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  
+  useEffect(() => {
+    const duration = 1000; // Animation duration in milliseconds
+    const steps = 30; // Number of steps in the animation
+    const stepDuration = duration / steps;
+    const increment = value / steps;
+    let currentStep = 0;
+
+    const timer = setInterval(() => {
+      currentStep++;
+      if (currentStep === steps) {
+        setDisplayValue(value);
+        clearInterval(timer);
+      } else {
+        setDisplayValue((prev) => Math.min(prev + increment, value));
+      }
+    }, stepDuration);
+
+    return () => clearInterval(timer);
+  }, [value]);
+
+  return <>${Math.floor(displayValue).toLocaleString()}</>;
+};
+
 export const AccountsSummary = () => {
   const [selectedAccount, setSelectedAccount] = useState<(typeof accounts)[0] | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,7 +66,7 @@ export const AccountsSummary = () => {
         <div className="text-center">
           <h3 className="text-lg font-medium text-gray-600 mb-2">Total Balance</h3>
           <p className="text-4xl font-bold text-primary">
-            ${totalBalance.toLocaleString()}
+            <AnimatedNumber value={totalBalance} />
           </p>
         </div>
       </Card>
@@ -71,7 +97,7 @@ export const AccountsSummary = () => {
                 <span className={`text-xl font-bold ${
                   account.balance < 0 ? 'text-red-600' : 'text-gray-900'
                 }`}>
-                  ${Math.abs(account.balance).toLocaleString()}
+                  <AnimatedNumber value={Math.abs(account.balance)} />
                 </span>
                 <span className="text-xs text-gray-500">{account.accountNumber}</span>
               </div>
@@ -97,7 +123,7 @@ export const AccountsSummary = () => {
                 <span className={`font-mono font-medium ${
                   transaction.amount > 0 ? 'text-emerald-600' : 'text-red-600'
                 }`}>
-                  {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
+                  {transaction.amount > 0 ? '+' : ''}<AnimatedNumber value={Math.abs(transaction.amount)} />
                 </span>
               </div>
             ))}
