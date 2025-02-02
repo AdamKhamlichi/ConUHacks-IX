@@ -35,8 +35,17 @@ const goalSchema = new mongoose.Schema({
     category: String,
 });
 
+const investSchema = new mongoose.Schema({
+    month: String,
+    stocks: Number,
+    bonds: Number,
+    crypto: Number,
+    date: { type: Date, default: Date.now }
+});
+
 const Course = mongoose.model('Course', courseSchema);
 const Goal = mongoose.model('Goal', goalSchema);
+const Invest = mongoose.model('Invest', investSchema);
 
 // Endpoint for the Learn page
 app.get('/api/learn', async (req, res) => {
@@ -54,6 +63,19 @@ app.get('/api/goals', async (req, res) => {
         res.json(goals);
     } catch (err) {
         res.status(500).json({ message: 'Error fetching goals', error: err });
+    }
+});
+
+// Endpoint for the Invest page
+app.get('/api/invests', async (req, res) => {
+    try {
+        console.log('Fetching investments from the database...');
+        const investments = await Invest.find();
+        console.log('Investments fetched:', investments);
+        res.json(investments);
+    } catch (err) {
+        console.error('Error fetching investments:', err);
+        res.status(500).json({ message: 'Error fetching investments', error: err });
     }
 });
 
